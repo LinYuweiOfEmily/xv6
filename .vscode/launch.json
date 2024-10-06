@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": false,
-      "cwd": "/home/students/220110130/xv6-oslab24-hitsz/user",
-      "program": "/home/students/220110130/xv6-oslab24-hitsz/user/build/Debug/outDebug",
+      "cwd": "/home/students/220110130/xv6-oslab24-hitsz/kernel",
+      "program": "/home/students/220110130/xv6-oslab24-hitsz/kernel/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [
