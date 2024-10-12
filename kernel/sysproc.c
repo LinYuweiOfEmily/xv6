@@ -20,8 +20,10 @@ uint64 sys_fork(void) { return fork(); }
 
 uint64 sys_wait(void) {
   uint64 p;
+  uint64 p1;
   if (argaddr(0, &p) < 0) return -1;
-  return wait(p);
+  if (argaddr(1, &p1) < 0) return -1;
+  return wait(p, p1);
 }
 
 uint64 sys_sbrk(void) {
@@ -79,5 +81,57 @@ uint64 sys_rename(void) {
   struct proc *p = myproc();
   memmove(p->name, name, len);
   p->name[len] = '\0';
+  return 0;
+}
+
+uint64 sys_yield(void) {
+
+//   获取当前正在执行的进程PCB(参考mycpu和myproc)
+  struct proc *myP = myproc();
+
+
+// 打印出该进程对应的内核线程在进行上下文切换时，上下文被保存到的地址区间(参考上下文切换)；
+  
+
+  printf("Save the context of the process to the memory region from address %p to %p\n", &myP->context, (&myP->context) + 1);
+
+// 打印出该进程的用户态陷入内核态时PC的值(参考trapframe)；
+  printf("Current running process pid is %d and user pc is %p\n", myP->pid, myP->trapframe->epc);  
+
+// 根据调度器的工作方式模拟一次调度，找到下一个RUNNABLE的进程，同样打印相关信息(参考调度器线程的工作方式)。首先需要在proc.h函数末尾新增extern声明全局进程表，然后在sys_yield函数中从当前进程起，环形遍历全局进程表，在这个过程中记得注意锁的获取和释放。
+
+  struct proc *p;
+
+
+
+
+ 
+
+  for (p = myP + 1; ;p++) {
+    
+    if (p >= &proc[NPROC]) {
+      p = proc;
+    }
+    if (p == myP) {
+      break;
+    }
+    
+    acquire(&p->lock);
+    if (p->state == RUNNABLE ) {
+
+      printf("Next runnable process pid is %d and user pc is %p\n", p->pid, p->trapframe->epc);
+
+      release(&p->lock);
+      break;
+    }
+
+    release(&p->lock);
+    
+  }
+
+// 然后将当前进程挂起，XV6内核态已经帮我们实现了一个yield函数了。
+
+  yield();
+
   return 0;
 }
