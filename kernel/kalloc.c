@@ -30,7 +30,6 @@ struct kmem kmems[NCPU];
 void
 kinit()
 {
-  
   for (int i = 0; i < NCPU; i++) {
     initlock(&kmems[i].lock, "kmem");
   }
@@ -94,24 +93,26 @@ kalloc(void)
   if (r) {
     kmems[mycpuid].freelist = r->next;
     // printf("1:cpu%d", mycpuid);
+    release(&kmems[mycpuid].lock);
   } else {
+    release(&kmems[mycpuid].lock);
+
     for (int i = 0; i < NCPU; i++) {
 
       if (i != mycpuid) { 
-        // acquire(&kmems[i].lock);
+        acquire(&kmems[i].lock);
         r = kmems[i].freelist;
         if (r) {
         // printf("2:cpu%d", i);
           kmems[i].freelist = r->next;
-          // release(&kmems[i].lock);
+          release(&kmems[i].lock);
           break;
         }
-        // release(&kmems[i].lock);
+        release(&kmems[i].lock);
         
       }
     }
   }
-  release(&kmems[mycpuid].lock);
 
 
 

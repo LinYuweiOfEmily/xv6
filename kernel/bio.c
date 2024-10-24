@@ -38,25 +38,19 @@ void
 binit(void)
 {
   struct buf *b;
-  int perSize = NBUF / NBUCKETS;
 
   initlock(&bcache.global_lock, "bcache");
   for (int i = 0;i < NBUCKETS; i++) {
     initlock(&bcache.lock[i], "bcache_bucket");
     bcache.head[i].prev = &bcache.head[i];
     bcache.head[i].next = &bcache.head[i];
-    struct buf *bstart = bcache.buf + i * perSize;
-    struct buf *bend = bcache.buf + (i + 1) * perSize;
-    if (i == NBUCKETS - 1) {
-      bend = bcache.buf + NBUF;
-    }
-    for(b = bstart; b < bend; b++){
-      b->next = bcache.head[i].next;
-      b->prev = &bcache.head[i];
-      initsleeplock(&b->lock, "buffer");
-      bcache.head[i].next->prev = b;
-      bcache.head[i].next = b;
-    }
+  }
+  for(b = bcache.buf; b < bcache.buf + NBUF; b++){
+    b->next = bcache.head[0].next;
+    b->prev = &bcache.head[0];
+    initsleeplock(&b->lock, "buffer");
+    bcache.head[0].next->prev = b;
+    bcache.head[0].next = b;
   }
 
   // Create linked list of buffers
