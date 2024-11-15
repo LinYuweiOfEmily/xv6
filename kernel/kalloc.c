@@ -73,6 +73,7 @@ kfree(void *pa)
   r->next = kmems[mycpuid].freelist;
   kmems[mycpuid].freelist = r;
   release(&kmems[mycpuid].lock);
+  
 }
 
 // Allocate one 4096-byte page of physical memory.
