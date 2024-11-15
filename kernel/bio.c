@@ -40,6 +40,7 @@ binit(void)
   struct buf *b;
 
   initlock(&bcache.global_lock, "bcache");
+
   for (int i = 0;i < NBUCKETS; i++) {
     initlock(&bcache.lock[i], "bcache_bucket");
     bcache.head[i].prev = &bcache.head[i];
@@ -66,7 +67,7 @@ bget(uint dev, uint blockno)
   int blockno_key = blockno % NBUCKETS;
   acquire(&bcache.lock[blockno_key]);
 
-  // Is the block already cached?
+  // 是否已经缓存
   for(b = bcache.head[blockno_key].next; b != &bcache.head[blockno_key]; b = b->next){
     if(b->dev == dev && b->blockno == blockno){
       b->refcnt++;
@@ -75,7 +76,8 @@ bget(uint dev, uint blockno)
       return b;
     }
   }
-
+  
+  // 未缓存，且该blockno_key对应的桶里存在空的cache块
   for(b = bcache.head[blockno_key].prev; b != &bcache.head[blockno_key]; b = b->prev){
     if(b->refcnt == 0) {
       b->dev = dev;
@@ -163,36 +165,36 @@ brelse(struct buf *b)
     panic("brelse");
 
   releasesleep(&b->lock);
-  int b_key = b->blockno % NBUCKETS;
-  acquire(&bcache.lock[b_key]);
+  int blockno = b->blockno % NBUCKETS;
+  acquire(&bcache.lock[blockno]);
   b->refcnt--;
   if (b->refcnt == 0) {
     // no one is waiting for it.
     b->next->prev = b->prev;
     b->prev->next = b->next;
-    b->next = bcache.head[b_key].next;
-    b->prev = &bcache.head[b_key];
-    bcache.head[b_key].next->prev = b;
-    bcache.head[b_key].next = b;
+    b->next = bcache.head[blockno].next;
+    b->prev = &bcache.head[blockno];
+    bcache.head[blockno].next->prev = b;
+    bcache.head[blockno].next = b;
   }
   
-  release(&bcache.lock[b_key]);
+  release(&bcache.lock[blockno]);
 }
 
 void
 bpin(struct buf *b) {
-  int b_key = b->blockno % NBUCKETS;
-  acquire(&bcache.lock[b_key]);
+  int blockno = b->blockno % NBUCKETS;
+  acquire(&bcache.lock[blockno]);
   b->refcnt++;
-  release(&bcache.lock[b_key]);
+  release(&bcache.lock[blockno]);
 }
 
 void
 bunpin(struct buf *b) {
-  int b_key = b->blockno % NBUCKETS;
-  acquire(&bcache.lock[b_key]);
+  int blockno = b->blockno % NBUCKETS;
+  acquire(&bcache.lock[blockno]);
   b->refcnt--;
-  release(&bcache.lock[b_key]);
+  release(&bcache.lock[blockno]);
 }
 
 
